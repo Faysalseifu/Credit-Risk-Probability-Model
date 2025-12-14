@@ -48,9 +48,9 @@ python -m src.train \
 - Keep notebooks lightweight; move reusable logic into src/.
 - Do not commit data/models; prefer DVC or object storage.
 
-## Credit scoring business context
-**Basel II and interpretability**: Under the IRB approach, supervisors must trace every input to the PD estimate and its impact on capital. We prioritize interpretable features, monotonic relationships, and reproducible documentation.
+## Credit Scoring Business Understanding
+**Basel II and interpretability**: Capital depends on PD estimates, so regulators must retrace every assumption. We use interpretable features, monotonic scorecard-style transformations, and full documentation so audits can reproduce results and challenge drivers.
 
-**Proxy target and its risks**: The dataset lacks an explicit default label, so we build a proxy (e.g., high-risk behavior). A weak proxy can misstate risk and pricing; continuous back-testing against true defaults is required once available.
+**Proxy target necessity and risks**: With no direct default label, a proxy is required to train any supervised model. If the proxy poorly represents true default behavior, predictions can misprice risk, distort capital needs, and erode portfolio performance; ongoing back-testing and proxy refinement are mandatory.
 
-**Simple vs. complex models**: Logistic regression/scorecards are transparent and easy to validate; ensembles (GBM, RF) capture nonlinearity but need post-hoc explainability (SHAP, PDP) and add validation burden. A common pattern is a simple champion for regulatory use with a complex challenger for monitoring.
+**Model choice trade-offs**: Logistic Regression with WoE is transparent, stable, and easy to govern but may sacrifice lift. Gradient Boosting improves AUC by modeling nonlinearity, yet raises validation burden, explainability costs (SHAP/PDP), and potential regulatory friction. A common pattern is an interpretable champion for regulatory use with a boosted challenger for monitoring.
