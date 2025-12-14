@@ -1,21 +1,72 @@
 # Credit-Risk-Probability-Model-for-Alternative-Data
 An End-to-End Implementation for Building, Deploying, and Automating a Credit Risk Model
+This repository contains the code base for building, training, and deploying a credit-risk scoring service for Bati Bank.
 
-#Task-1
-1-The Basel II Capital Accord creates a strong need for interpretable and well-documented risk models because they directly determine regulatory capital requirements. Under the Advanced Internal Ratings-Based (A-IRB) approach, banks use internal models to estimate PD, LGD, and EAD, which must be clearly explained and justified to regulators.
+This repository contains the code base for building, training, and deploying a credit-risk scoring service for Bati Bank.
 
-As a result, model transparency and auditability are critical. Institutions often prefer logistic regression and credit scorecards because they are highly interpretable and regulator-friendly. Although advanced machine learning models can improve accuracy, their “black box” nature limits their use in regulated environments.
+Project Structure
+credit-risk-model/
+├── .github/workflows/ci.yml        # CI pipeline running tests & linting
+├── data/                           # <- Git-ignored raw & processed data
+│   ├── raw/                        # Raw data files
+│   └── processed/                  # Cleaned / feature-engineered data
+├── notebooks/
+│   └── 1.0-eda.ipynb              # Exploratory data analysis
+├── src/
+│   ├── __init__.py
+│   ├── data_processing.py         # Feature engineering utilities
+│   ├── train.py                   # Model training script (CLI)
+│   ├── predict.py                 # Batch inference script (CLI)
+│   └── api/
+│       ├── main.py                # FastAPI app exposing prediction endpoint
+│       └── pydantic_models.py     # Request/response schemas
+├── tests/
+│   └── test_data_processing.py    # Unit tests
+├── Dockerfile                     # Container image definition
+├── docker-compose.yml             # Local orchestration (API + model)
+├── requirements.txt               # Python dependencies
+├── .gitignore                     # Files/directories excluded from VCS
+└── README.md                      # Project docs
+Quickstart
+Build Docker image:
 
-Basel II also requires thorough documentation, monitoring, and periodic recalibration of models to ensure accountability, manage model risk, and maintain ongoing regulatory compliance.
+docker compose build
+Start the API locally (hot-reloaded):
 
-2-A proxy variable for default is necessary because credit scoring models require a binary response variable to estimate the Probability of Default (PD). When an explicit default label is unavailable or delayed, a proxy is constructed from observable data to represent whether a borrower defaulted or not.
+docker compose up
+Run unit tests:
 
-However, using an imperfect proxy introduces business and modeling risks. If the proxy does not accurately reflect true default behavior, the model may misestimate risk, leading to higher default rates and poor lending decisions. It can also worsen sample bias, causing the model to underestimate risk. A noisy proxy weakens model interpretability, accelerates model decay, and may create regulatory compliance issues. Therefore, proxy variables must be carefully designed, validated, and continuously monitored.
+pytest -q
+Model Training & Tracking (Task-5)
+Install updated dependencies (adds mlflow & pytest):
 
-3-The trade-off between simple, interpretable models (e.g., Logistic Regression or Credit Scorecards) and complex, high-performance models (e.g., GBM or Random Forests) lies in balancing predictive accuracy with transparency and regulatory compliance.
+pip install -r requirements.txt
+Launch the MLflow tracking UI (optional):
 
-Simple models are highly interpretable, computationally efficient, and regulator-friendly, making them well suited for regulated environments such as Basel II, where models are used to estimate Probability of Default (PD) and must be easily explained, justified, and audited. Credit scorecards, in particular, allow clear insight into how borrower characteristics affect risk, supporting Explainable AI (XAI) requirements.
+mlflow ui  # open http://127.0.0.1:5000
+Train & tune models (LogReg, Random Forest, GBM) and log runs to MLflow:
 
-In contrast, complex machine learning models can capture non-linear relationships and subtle data patterns, often delivering higher predictive accuracy. However, they are typically less transparent, harder to explain, more computationally demanding, and more prone to overfitting if not carefully tuned.
+python -m src.train \
+    --raw-path data/data.csv \
+    --model-out artifacts/best_model.pkl
+Grid-search selects the best hyper-parameters (AUC on a hold-out set) and registers the top model under the MLflow Model Registry name credit-risk-best.
 
-In practice, financial institutions must balance these competing goals—often accepting lower accuracy in exchange for interpretability, stability, and regulatory acceptance, especially when models directly influence lending decisions and capital requirements.
+Re-run the full test suite at any time:
+
+pytest -q
+Development Guidelines
+Use feature branches + PRs targeting main.
+All new code must include unit-tests and pass pytest & ruff linters.
+Keep notebooks lightweight; move reusable code to src/.
+Sensitive artefacts (models, data) must not be committed. Use DVC or S3.
+Credit Scoring Business Understanding
+1. Basel II & Model Interpretability
+Basel II’s Internal Ratings-Based (IRB) approach lets a bank use its own credit-risk models only if they are transparent, well-documented, and regularly validated. Supervisors must be able to trace every input to the Probability-of-Default (PD) estimate and see how it drives capital requirements. Therefore our pipeline must prioritise interpretability (clear feature definitions, monotonic relationships, explainable math) and rigorous documentation so auditors can reproduce results and challenge assumptions.
+
+2. Why we build a proxy target & its risks
+The dataset lacks an explicit "default" outcome, so we derive a proxy label (e.g. flagging high-risk RFM behaviour or historical fraud) to train a supervised model. This is necessary to learn any predictive pattern, but it introduces label risk: if the proxy is only loosely correlated with real default, predictions may misstate credit risk, misprice loans, and expose the bank to unexpected losses or regulatory findings. Continuous back-testing against true defaults, once available, is essential.
+
+3. Simple vs complex models in a regulated setting
+• Logistic Regression + Weight-of-Evidence: high transparency, easy to justify, monotonic scorecards, straightforward stress-testing; usually lower Gini/ROC-AUC.
+• Gradient Boosting / other ensemble: higher predictive power and nonlinear capture, but opaque, harder to validate, and needs post-hoc explainability (SHAP, PDPs).
+Regulation values explainability and governance, so the marginal uplift in accuracy from complex models must outweigh the added validation cost and capital-use uncertainty. A common compromise is to deploy a simple champion model for regulatory capital and use a complex challenger model for portfolio monitoring.
