@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Iterable, List, Optional, Tuple
 import argparse
 from pathlib import Path
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -12,8 +13,11 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MinMaxScaler
+from sklearn.cluster import KMeans
 from sklearn.base import BaseEstimator, TransformerMixin
 from scipy import sparse as sp
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 try:  # Prefer library WoE; fall back to manual if unavailable.
     from xverse.transformer import WOE
@@ -300,6 +304,113 @@ def transform_features(
     except Exception:  # pragma: no cover - feature names are best-effort
         feature_names = [f"f{i}" for i in range(X_t.shape[1])]
     return X_t, y, feature_names
+
+
+def calculate_rfm(df: pd.DataFrame, snapshot_date: Optional[datetime] = None) -> pd.DataFrame:
+    """Compute Recency, Frequency, Monetary metrics per customer.
+
+    Parameters
+    - df: transactional dataframe containing CustomerId, TransactionStartTime, TransactionId, Amount
+    - snapshot_date: reference date for recency; defaults to 1 day after latest transaction
+    """
+    if snapshot_date is None:
+        snapshot_date = pd.to_datetime(df[DATETIME_COLUMN]).max() + pd.Timedelta(days=1)
+
+    df_local = df.copy()
+    df_local[DATETIME_COLUMN] = pd.to_datetime(df_local[DATETIME_COLUMN])
+
+    rfm = (
+        df_local.groupby(GROUP_KEY).agg(
+            {
+                DATETIME_COLUMN: lambda x: (snapshot_date - x.max()).days,
+                "TransactionId": "count",
+                AMOUNT_COLUMN: "sum",
+            }
+        )
+    ).reset_index()
+    rfm.columns = [GROUP_KEY, "Recency", "Frequency", "Monetary"]
+
+    # Capture absolute spend; fall back to Amount if Value column absent.
+    value_col = "Value" if "Value" in df_local.columns else AMOUNT_COLUMN
+    rfm["Monetary_abs"] = df_local.groupby(GROUP_KEY)[value_col].sum().abs().values
+    positives = df_local[df_local[AMOUNT_COLUMN] > 0].groupby(GROUP_KEY)[AMOUNT_COLUMN].sum()
+    rfm["Monetary_positive"] = positives.reindex(rfm[GROUP_KEY]).fillna(0.0).values
+
+    return rfm
+
+
+def create_proxy_target(
+    rfm_df: pd.DataFrame,
+    n_clusters: int = 3,
+    random_state: int = 42,
+    plot: bool = False,
+) -> pd.DataFrame:
+    """Cluster RFM features and label least-engaged cluster as high risk."""
+
+    features = ["Recency", "Frequency", "Monetary_abs"]
+    missing = [col for col in features if col not in rfm_df.columns]
+    if missing:
+        raise ValueError(f"rfm_df missing required columns: {missing}")
+
+    X = rfm_df[features].copy()
+    X["Recency"] = X["Recency"].clip(lower=0)
+    X["Frequency_log"] = np.log1p(X["Frequency"])
+    X["Monetary_abs_log"] = np.log1p(X["Monetary_abs"])
+
+    cluster_features = ["Recency", "Frequency_log", "Monetary_abs_log"]
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X[cluster_features])
+
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init="auto")
+    rfm_df = rfm_df.copy()
+    # Keep transformed features for interpretability of cluster summary.
+    rfm_df[cluster_features] = X[cluster_features]
+    rfm_df["cluster"] = kmeans.fit_predict(X_scaled)
+
+    cluster_summary = rfm_df.groupby("cluster")[cluster_features].mean()
+    print("Cluster Summary (mean values):")
+    print(cluster_summary.sort_values(by="Recency", ascending=False))
+
+    if plot:
+        plt.figure(figsize=(8, 5))
+        sns.scatterplot(
+            data=rfm_df,
+            x="Frequency_log",
+            y="Monetary_abs_log",
+            hue="cluster",
+            palette="deep",
+        )
+        plt.title("RFM Clusters")
+        plt.tight_layout()
+        plt.show()
+
+    # High-risk cluster heuristic: low frequency, low monetary, high recency.
+    high_risk_candidates = cluster_summary.sort_values(by=["Frequency_log", "Monetary_abs_log", "Recency"], ascending=[True, True, False])
+    high_risk_cluster = int(high_risk_candidates.index[0])
+    print(f"Selected high-risk cluster: {high_risk_cluster}")
+
+    rfm_df["is_high_risk"] = (rfm_df["cluster"] == high_risk_cluster).astype(int)
+    print("Proxy target distribution (%):")
+    print(rfm_df["is_high_risk"].value_counts(normalize=True).mul(100).round(2))
+
+    return rfm_df[
+        [
+            GROUP_KEY,
+            "is_high_risk",
+            "cluster",
+            "Recency",
+            "Frequency",
+            "Monetary",
+            "Monetary_abs",
+            "Monetary_positive",
+        ]
+    ]
+
+
+def add_proxy_to_features(customer_features_df: pd.DataFrame, proxy_df: pd.DataFrame) -> pd.DataFrame:
+    """Merge proxy target onto customer-level features."""
+
+    return customer_features_df.merge(proxy_df[[GROUP_KEY, "is_high_risk"]], on=GROUP_KEY, how="left")
 
 
 def process_raw_data(
