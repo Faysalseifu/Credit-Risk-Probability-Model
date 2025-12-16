@@ -122,8 +122,7 @@ class WeightOfEvidenceEncoder(BaseEstimator, TransformerMixin):
 
         target = pd.Series(y, name=y.name or "target")
 
-        # Use a robust, dependency-free WoE implementation for categorical variables.
-        # External libraries often assume numeric monotonic binning, which isn't appropriate for raw categoricals here.
+        # Manual robust WoE for categoricals
         total_pos = float((target == 1).sum()) + self.epsilon
         total_neg = float((target == 0).sum()) + self.epsilon
         for col in self.cols_:
