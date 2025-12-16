@@ -32,6 +32,19 @@ credit-risk-model/
 4) Build image: `docker compose build`
 5) Run API locally (hot reload): `docker compose up`
 
+## Serving model via API
+- The FastAPI service loads the best model from the MLflow Model Registry using `MODEL_NAME` and `MODEL_STAGE`.
+- To ensure the request payload matches the training schema and order, the API reads the expected feature columns list from `FEATURE_COLUMNS_PATH`.
+    - Default path (via docker-compose): `/app/data/processed/expected_columns.json`.
+    - Current expected columns: `Recency`, `Frequency`, `Monetary`, `Monetary_abs`, `Monetary_positive`.
+    - Update this file if you change the training features.
+- Environment variables (override as needed):
+    - `MLFLOW_TRACKING_URI` (default `file:./mlruns`)
+    - `MODEL_NAME` (default `CreditRiskProxyModel`)
+    - `MODEL_STAGE` (default `Production`)
+    - `PREDICTION_THRESHOLD` (default `0.5`)
+    - `FEATURE_COLUMNS_PATH` (default `/app/data/processed/expected_columns.json`)
+
 ## Model training and tracking (Task 5)
 - Optional: launch MLflow UI with `mlflow ui` (default http://127.0.0.1:5000).
 - Train and log models (LogReg, Random Forest, GBM):

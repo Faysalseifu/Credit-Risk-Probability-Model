@@ -5,6 +5,11 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-file:./mlruns}
+      - MODEL_NAME=${MODEL_NAME:-CreditRiskProxyModel}
+      - MODEL_STAGE=${MODEL_STAGE:-Production}
+      - PREDICTION_THRESHOLD=${PREDICTION_THRESHOLD:-0.5}
+      - FEATURE_COLUMNS_PATH=${FEATURE_COLUMNS_PATH:-/app/data/processed/expected_columns.json}
     volumes:
-      - .:/app
-    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./mlruns:/app/mlruns
