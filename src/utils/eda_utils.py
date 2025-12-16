@@ -1,6 +1,6 @@
 """Lightweight EDA helper functions used in notebooks."""
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 
 import pandas as pd
 
