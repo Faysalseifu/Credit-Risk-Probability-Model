@@ -9,3 +9,5 @@ pytest
 xverse
 matplotlib
 seaborn
+mlflow
+xgboost
