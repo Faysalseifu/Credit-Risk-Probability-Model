@@ -1,0 +1,10 @@
+artifact_location: file:d:/10  Academy/week4/assigniment/Credit-Risk-Probability-Model/notebooks/mlruns/914142532373161905/models/m-a5395208759d4daabc2006b5149354e0/artifacts
+creation_timestamp: 1765896503388
+experiment_id: '914142532373161905'
+last_updated_timestamp: 1765896510564
+model_id: m-a5395208759d4daabc2006b5149354e0
+model_type: null
+name: model
+source_run_id: 264c04e7d3fd47cbb03e74962d414c96
+status: 2
+status_message: null

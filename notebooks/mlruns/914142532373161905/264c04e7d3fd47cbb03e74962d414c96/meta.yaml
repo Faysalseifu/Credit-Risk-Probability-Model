@@ -1,0 +1,14 @@
+artifact_uri: file:d:/10  Academy/week4/assigniment/Credit-Risk-Probability-Model/notebooks/mlruns/914142532373161905/264c04e7d3fd47cbb03e74962d414c96/artifacts
+end_time: 1765896510823
+entry_point_name: ''
+experiment_id: '914142532373161905'
+lifecycle_stage: active
+run_id: 264c04e7d3fd47cbb03e74962d414c96
+run_name: XGBoost
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765896479318
+status: 3
+tags: []
+user_id: hp

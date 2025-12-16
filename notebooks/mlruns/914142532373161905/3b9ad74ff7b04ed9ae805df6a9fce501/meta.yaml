@@ -1,0 +1,14 @@
+artifact_uri: file:d:/10  Academy/week4/assigniment/Credit-Risk-Probability-Model/notebooks/mlruns/914142532373161905/3b9ad74ff7b04ed9ae805df6a9fce501/artifacts
+end_time: 1765896362576
+entry_point_name: ''
+experiment_id: '914142532373161905'
+lifecycle_stage: active
+run_id: 3b9ad74ff7b04ed9ae805df6a9fce501
+run_name: LogisticRegression
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765896347813
+status: 4
+tags: []
+user_id: hp

@@ -1,0 +1,22 @@
+artifact_path: file:d:/10  Academy/week4/assigniment/Credit-Risk-Probability-Model/notebooks/mlruns/914142532373161905/models/m-a5395208759d4daabc2006b5149354e0/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.13.1
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBClassifier
+    model_format: ubj
+    xgb_version: 3.1.2
+mlflow_version: 3.7.0
+model_id: m-a5395208759d4daabc2006b5149354e0
+model_size_bytes: 216626
+model_uuid: m-a5395208759d4daabc2006b5149354e0
+prompts: null
+run_id: 264c04e7d3fd47cbb03e74962d414c96
+utc_time_created: '2025-12-16 14:48:23.491479'
