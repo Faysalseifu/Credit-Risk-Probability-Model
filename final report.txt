@@ -1,0 +1,166 @@
+Title: End-to-End Credit Risk Probability Model for Bati Bank BNPL
+
+Executive Summary
+
+This project delivers an end-to-end, production-ready credit risk probability model tailored for Bati Bank’s Buy-Now-Pay-Later (BNPL) program. We engineered a proxy target for default risk using Recency–Frequency–Monetary (RFM) metrics and K-means clustering to identify high-risk customers. A comprehensive workflow was built: data exploration (EDA), robust feature engineering (including temporal features, encodings, and WoE/IV), model training with hyperparameter tuning and MLflow experiment tracking, and deployment via a FastAPI microservice containerized with Docker. The pipeline emphasizes interpretability, reproducibility, and operational readiness, balancing business constraints with model performance. Key outputs include: labeled proxy target (ishighrisk), feature pipelines, trained models (e.g., Logistic Regression, XGBoost), tracked metrics (accuracy, precision, recall, ROC AUC, F1), and a ready-to-serve API with CI/CD hooks for testing and linting.
+
+Business Objective and Basel II Context
+
+BNPL programs face elevated credit risk driven by short-term lending, limited historical data, and rapid customer growth. The business objective is to predict the probability of default (PD) and flag high-risk customers to inform approval decisions, credit limits, pricing, and collections strategies. Basel II (and III) frameworks underscore the importance of robust, unbiased, and well-governed credit risk models:
+- Minimum capital requirements: Accurate PD estimation feeds Internal Ratings-Based (IRB) approaches to determine regulatory capital.
+- Supervisory review: Credible models must be validated, monitored, and governed, including backtesting and stability checks.
+- Market discipline: Transparent reporting supports stakeholder trust and consistent risk management.
+Our solution aligns with Basel expectations via documented methodology, interpretable features, tracked experiments, and deployable controls, while recognizing that proxy-based targets require enhanced monitoring and calibration.
+
+Proxy Target Rationale and Trade-offs
+
+Challenge: Lack of a clean, labeled default outcome in historical BNPL data. Solution: Construct a proxy ‘ishighrisk’ label using customer-level RFM metrics and unsupervised segmentation:
+- Recency: Days since last transaction; increasing values suggest disengagement or potential liquidity stress.
+- Frequency: Number of transactions over a defined window; low frequency may signal reduced repayment activity.
+- Monetary: Aggregate transaction value (or repayment value); extremal values may indicate risk via overextension or inactivity.
+We apply K-means clustering (k=2 or k=3), interpret cluster profiles, and map one segment to ‘ishighrisk’. Trade-offs:
+- Pros: Enables supervised learning without explicit default labels; scalable, fast; captures behavioral signals.
+- Cons: Cluster assignments may drift; label quality depends on feature scaling and segment interpretability; risk of mislabeling (false positives/negatives).
+- Mitigations: Stability checks across time windows; silhouette and Davies–Bouldin validation; sensitivity analysis on k; re-clustering cadence; business calibration; post-deployment monitoring with real outcomes.
+
+Exploratory Data Analysis (EDA)
+
+Goals: Understand distributions, data quality, correlations, and early risk signals.
+- Data Quality: Assessed missingness per column; detected outliers via IQR and z-scores; validated schema against expected columns (see data/processed/expected_columns.json). Ensured categorical levels were consistent and timestamps parsable.
+- Distributions: Visualized histograms and KDE for numeric features (amounts, balances, tenure), bar plots for categorical variables (product types, channels), and time series seasonality.
+- Correlations: Computed Pearson/Spearman for numeric pairs; Cramer’s V for categorical pairings; inspected multicollinearity via VIF.
+- Target Proxy Diagnostics: Post RFM clustering, checked class balance, cluster separability, and demographic skew.
+Top Insights:
+- Strong seasonality effects around promotional periods impact frequency and monetary values.
+- Certain channels/products exhibit heavier tails in monetary distributions, correlating with elevated proxy risk.
+- Recency shows nonlinear relation to proxy risk—plateau followed by sharp risk increase after inactivity threshold.
+- Missingness in some customer attributes correlates with higher proxy risk, warranting targeted imputation flags.
+
+Feature Engineering
+
+Design principles: Reproducible pipelines, leakage prevention, temporal consistency, and interpretability.
+Feature classes:
+- Aggregate features: Customer-level counts, sums, means, medians, max/min over rolling windows (e.g., 30/60/90 days).
+- Temporal features: Rolling recency, transaction velocity, inter-event times, trend features (e.g., linear slope of weekly spending), and calendar flags (month, day-of-week, holiday/promo markers).
+- Encodings: Target encoding with cross-fold strategy to avoid leakage; one-hot encoding for stable low-cardinality features; ordinal encoding where semantic order exists.
+- WoE/IV: Monotonic binning for continuous predictors to compute Weight of Evidence and Information Value; supports interpretability and logistic regression stability.
+- Risk flags: Missingness indicators, extreme value flags, rapid limit utilization changes.
+Pipeline implementation:
+- Data splits by time to respect causality.
+- Sklearn `ColumnTransformer` + custom transformers for temporal aggregations.
+- Fit/transform within cross-validation folds; persistent feature names tracked in data/processed/feature_names.txt.
+- Feature store artifacts (features.npy) for training/deployment parity.
+
+Proxy Target Engineering (RFM + K-means)
+
+Steps:
+1) Compute RFM per customer: recency (days since last activity), frequency (count), monetary (sum/mean) in a fixed observation window.
+2) Scale RFM using `StandardScaler` or `RobustScaler`.
+3) Select k via elbow/silhouette; fit K-means; profile cluster centroids.
+4) Assign ‘ishighrisk’ to cluster characterized by high recency, low frequency, and lower monetary activity (or extremal monetary volatility).
+5) Validate stability across different windows and cross-sections; record metrics.
+6) Persist proxy labels in data/processed/proxy_target.csv and align with `target.csv` for downstream supervised training.
+Governance:
+- Document mapping logic and thresholds.
+- Apply periodic re-clustering; maintain versioning via MLflow models.
+
+Model Training and Experiment Tracking
+
+Models trained:
+- Logistic Regression (LR): Baseline, interpretable, leverages WoE/IV; regularization via C, penalty, solver.
+- XGBoost (XGB): Nonlinear performance, handles feature interactions; parameters include `max_depth`, `n_estimators`, `learning_rate`, `colsample_bytree`, `subsample`, `scale_pos_weight`.
+Training approach:
+- Stratified time-aware splits; class weighting to address imbalance.
+- Hyperparameter tuning via grid/random search; cross-validated pipelines.
+- Metrics: Accuracy, Precision, Recall, F1, ROC AUC; plus calibration curves and PR AUC for imbalanced focus.
+- MLflow tracking: Parameters, metrics, artifacts (confusion matrices, classification reports), and serialized models. See notebooks/mlruns and notebooks/models directories for runs and registered models.
+Results (illustrative based on tracked artifacts):
+- LR: Balanced performance; strong interpretability; robust under WoE/IV.
+- XGB: Higher ROC AUC and Recall; improved detection of high-risk cases; requires monitoring for drift.
+Model choice: If business prioritizes transparency and governance, LR is preferred; if prioritizing risk capture, XGB is selected. Hybrid strategy: deploy XGB, retain LR as challenger or for credit policy explanations.
+
+Deployment: FastAPI + Docker + CI/CD
+
+Architecture:
+- FastAPI app exposes `/predict` endpoint receiving customer features and returning PD and risk flag.
+- Model loading via MLflow or local serialized artifacts; consistent preprocessing using shared pipelines.
+- Containerization with Dockerfile; orchestration via docker-compose.yml.
+- CI/CD: Linting (flake8/black), unit tests (pytest in tests/), build and push of image, automated deploy to staging.
+Operational considerations:
+- Input schema validation via Pydantic models (src/api/pydantic_models.py).
+- Logging and request tracing; health checks (`/health` endpoint).
+- Secrets and configs via environment variables.
+- Resource sizing and autoscaling based on request throughput.
+- Monitoring: Latency, error rates, and model metrics (population stability index, drift).
+
+Model Governance and Monitoring
+
+- Data drift detection with PSI and KS tests; schedule retraining when thresholds breached.
+- Performance monitoring: Precision/Recall on confirmed outcomes; calibration checks.
+- Bias and fairness: Assess subgroup performance; mitigate via thresholds and policy overlays.
+- Versioning: Track via MLflow models/registries; blue/green deployments; rollback procedures.
+
+Limitations and Future Work
+
+Limitations:
+- Proxy label quality: Cluster-based labels are approximations; may not match true defaults.
+- Temporal leakage risk if windows overlap improperly; guarded via careful splits but requires enforcement.
+- Class imbalance may vary seasonally, affecting stability.
+- Feature drift due to promotions and macro environment shifts.
+Future Enhancements:
+- Integrate real default outcomes to calibrate PD (Platt scaling or isotonic calibration), refit thresholds, and validate Gini/ROC AUC.
+- Add survival analysis or hazard models for time-to-default.
+- Incorporate alternative embeddings (e.g., sequence models for transaction histories).
+- Deploy monitoring dashboards (e.g., Prometheus + Grafana) with MLflow integration.
+- Implement active learning: prioritize investigation for uncertain predictions.
+
+Business Recommendations
+
+- Use PD outputs to adjust credit limits dynamically; combine with policy rules for regulatory compliance.
+- Apply differentiated pricing based on PD bands; align with expected loss (EL = PD × LGD × EAD).
+- Enhance collections with early warning signals derived from recency and velocity features.
+- Maintain a challenger model framework to ensure robustness and continuous improvement.
+
+Methodology and Reproducibility
+
+- Codebase structure supports modular pipelines: src/data_processing.py, src/train.py, src/predict.py, src/api/main.py.
+- Notebooks record exploratory steps and prototypes; finalized artifacts saved under data/processed/ and notebooks/mlruns.
+- Requirements pinned in requirements.txt; container images built deterministically.
+- Unit tests validate preprocessing and selected model behaviors (tests/test_data_processing.py).
+
+Conclusion
+
+The delivered pipeline establishes a strong foundation for BNPL credit risk modeling under practical data constraints. By building a proxy target from behavioral RFM signals and validating via unsupervised clustering, we enable supervised training and deployment while maintaining governance and interpretability. The production-ready FastAPI service and CI/CD path accelerate integration into decisioning systems. Ongoing monitoring and future calibration to real outcomes will further enhance accuracy, fairness, and regulatory alignment.
+
+Appendix A: Key Metrics and Artifacts
+
+- Metrics tracked: accuracy, precision, recall, F1, ROC AUC.
+- Artifacts: classification reports, confusion matrices, model binaries, feature lists.
+- MLflow run IDs and registered models available in notebooks/mlruns and notebooks/models.
+
+Appendix B: Example API Contract
+
+Request (JSON):
+{
+  "customer_id": "C12345",
+  "recency_days": 45,
+  "frequency_90d": 6,
+  "monetary_90d": 120.5,
+  "channel": "mobile",
+  "product_type": "electronics"
+}
+Response (JSON):
+{
+  "pd": 0.37,
+  "ishighrisk": true,
+  "model_version": "xgb-2025-12-16",
+  "explanations": {
+    "top_features": ["recency_days", "frequency_90d", "monetary_90d"]
+  }
+}
+
+Appendix C: Suggested CI/CD Steps
+
+- Pre-commit hooks: black, isort, flake8.
+- CI pipeline: run pytest; build Docker image; push to registry; deploy to staging; smoke tests.
+- CD gates: model performance thresholds, drift checks, and manual approval for production.
