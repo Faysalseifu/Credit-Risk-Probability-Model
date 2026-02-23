@@ -1,15 +1,43 @@
 # Credit Risk Probability Model (Alternative Data)
 
 [![CI](https://github.com/YOUR_USERNAME/Credit-Risk-Probability-Model/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/Credit-Risk-Probability-Model/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
+![XGBoost](https://img.shields.io/badge/XGBoost-Latest-orange.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-Latest-red.svg)
+![MLflow](https://img.shields.io/badge/MLflow-Latest-0194E2.svg)
+
+**Production-grade credit risk scoring for BNPL programs using alternative data and proxy-based risk modeling.**
 
 End-to-end pipeline for building, training, and deploying a credit-risk scoring service for Bati Bank's Buy-Now-Pay-Later (BNPL) program using alternative data and proxy-based risk modeling.
 
+## 🎯 Business Problem
+
+**Challenge**: Bati Bank's BNPL program lacks direct default labels, making traditional supervised learning impossible. Without labeled data, the bank cannot:
+- Assess credit risk for new customers
+- Comply with Basel II capital requirements (PD estimation)
+- Optimize portfolio quality and reduce defaults
+
+**Solution**: Build a proxy-based risk model using RFM (Recency-Frequency-Monetary) analysis and alternative transaction data to predict customer risk without requiring historical defaults.
+
+## 💡 Solution Overview
+
+1. **Proxy Target Engineering**: RFM features + K-means clustering to create risk labels
+2. **Model Training**: XGBoost gradient boosting (selected over Logistic Regression)
+3. **Explainability**: SHAP analysis for regulatory compliance and interpretability
+4. **Deployment**: FastAPI REST API + Streamlit dashboard for real-time predictions
+5. **MLOps**: MLflow tracking, Docker containerization, CI/CD pipeline
+
 ## 🎯 Key Results
 
-- **Model Performance**: XGBoost achieves **ROC-AUC of 0.9996**, outperforming Logistic Regression baseline (ROC-AUC 0.9679)
-- **Business Impact**: Estimated **25-35% reduction in high-risk approvals** by rejecting top 20% of proxy high-risk customers
-- **Basel II Compliance**: Interpretable features and full documentation support regulatory capital requirements
-- **Production Ready**: FastAPI service with Docker containerization and CI/CD pipeline
+| Metric | Value |
+|--------|-------|
+| **ROC-AUC** | **0.9996** (XGBoost) vs 0.9679 (Logistic Regression) |
+| **Precision** | **0.9957** |
+| **Recall** | **0.9708** |
+| **F1-Score** | **0.9831** |
+| **Business Impact** | Estimated **25-35% reduction in high-risk approvals** |
+| **Compliance** | Basel II-ready with interpretable features & SHAP explanations |
 
 ## 📸 Screenshots
 
@@ -194,8 +222,8 @@ Since BNPL data lacks direct default labels, we construct a proxy target using *
 ### Model Selection
 
 Best model selected by **ROC-AUC** on hold-out test set:
-- XGBoost: **ROC-AUC 0.847** (selected)
-- Logistic Regression: ROC-AUC ~0.82
+- XGBoost: **ROC-AUC 0.9996** (selected)
+- Logistic Regression: ROC-AUC 0.9679
 
 ## 📈 Performance Metrics
 
@@ -302,16 +330,27 @@ With no direct default label, a proxy is required to train any supervised model.
 
 ## 📄 License
 
-[Add your license here]
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 👥 Contributors
 
-[Add contributors here]
+- **Author**: [Your Name]
+- **10 Academy**: Week 12 Capstone Project
 
-## 📧 Contact
+## 📧 Contact & Links
 
-[Add contact information here]
+- **GitHub**: [@YOUR_USERNAME](https://github.com/YOUR_USERNAME)
+- **LinkedIn**: [Your LinkedIn Profile](https://www.linkedin.com/in/YOUR_PROFILE)
+- **Email**: your.email@example.com
+- **Portfolio**: [Your Portfolio Website](https://your-portfolio.com)
 
 ---
 
-**Note**: Replace `YOUR_USERNAME` in the CI badge URL with your actual GitHub username after pushing to GitHub.
+## 📝 Setup Notes
+
+**Before pushing to GitHub:**
+1. Replace `YOUR_USERNAME` in the CI badge URL (line 3) with your actual GitHub username
+2. Update clone URL (line 38) with your GitHub username
+3. Add your contact information in the Contact section above
+4. Deploy Streamlit dashboard and update Live Demo links (lines 68-69)
+5. Generate screenshots and place in `artifacts/screenshots/` directory

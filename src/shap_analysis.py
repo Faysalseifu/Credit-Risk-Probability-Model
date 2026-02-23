@@ -13,7 +13,9 @@ import seaborn as sns
 # Configuration
 MODEL_NAME = os.getenv("MODEL_NAME", "CreditRiskProxyModel")
 MODEL_STAGE = os.getenv("MODEL_STAGE", "Production")
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+# Default to notebooks/mlruns if it exists, otherwise ./mlruns
+_default_uri = "file:./notebooks/mlruns" if Path("notebooks/mlruns").exists() else "file:./mlruns"
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", _default_uri)
 FEATURE_COLUMNS_PATH = os.getenv("FEATURE_COLUMNS_PATH", "data/processed/expected_columns.json")
 OUTPUT_DIR = Path("artifacts/shap_plots")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
