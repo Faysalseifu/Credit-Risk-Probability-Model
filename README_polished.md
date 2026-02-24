@@ -15,25 +15,30 @@ An end-to-end machine learning pipeline for building, training, and deploying a 
 - **ROC-AUC**: `0.999` (XGBoost champion)
 - **F1 Score**: `0.983` 
 - **Precision / Recall**: `0.983 / 0.995`
-- **Business Impact**: Automated risk assessment identifies high-risk proxy segments (~22% of customers) allowing for data-driven rejection/approval workflows.
+- **Proxy high-risk segment**: ~22% of customers
+- **Estimated business impact**: Rejecting top ~20% proxy high-risk could reduce potential defaults by 30–45% (based on proxy correlation).
 
 ---
 
-## 📸 Project Highlights
+## 📸 Model Explainability (SHAP)
 
-### 1. Interactive Dashboard
-The dashboard allows credit officers to input customer metrics and receive an immediate risk probability.
-
-![Dashboard Preview](artifacts/screenshots/dashboard_home.png) *(Add your screenshot here)*
-
-### 2. Model Explainability (SHAP)
 We use SHAP (SHapley Additive exPlanations) to ensure "Right to Explanation" and regulatory compliance (Basel II).
 
-**Global Feature Importance:**
+**Global Feature Importance (Beeswarm):**
 ![SHAP Summary](artifacts/shap_plots/shap_summary_dot.png)
 
-**Individual Explanation (Waterfall):**
+**Individual Explanation for High-Risk Prediction (Waterfall):**
 ![SHAP Waterfall](artifacts/shap_plots/shap_waterfall_sample.png)
+
+---
+
+## 🛡️ Business Understanding & Compliance
+
+**Basel II and Interpretability**: Capital depends on PD estimates, so regulators must retrace every assumption. We use interpretable features, monotonic transformations, and SHAP analysis so audits can reproduce results and challenge drivers.
+
+**Proxy Target Strategy**: With no direct default label, a proxy is required to train any supervised model. If the proxy poorly represents true default behavior, predictions can misprice risk. Ongoing back-testing and proxy refinement are mandatory.
+
+**Model Choice Trade-offs**: Logistic Regression with WoE is transparent and stable but may sacrifice lift. Gradient Boosting (XGBoost) improves AUC by modeling nonlinearity, yet raises validation burden. We provide an XGBoost champion with full SHAP transparency.
 
 ---
 
@@ -47,7 +52,7 @@ We use SHAP (SHapley Additive exPlanations) to ensure "Right to Explanation" and
 
 ---
 
-## 📂 Folder Structure
+## 📂 Project Structure
 ```text
 ├── artifacts/               # Model binaries, SHAP plots, and screenshots
 ├── data/                    # Raw and processed datasets (git-ignored)
@@ -81,13 +86,6 @@ streamlit run dashboard.py
 ```bash
 docker-compose up --build
 ```
-
----
-
-## 🛡️ Business Context & Compliance
-**Basel II Compliance**: The model uses interpretable features and SHAP analysis to provide clear drivers for every credit decision, meeting regulatory audit requirements for PD (Probability of Default) estimation.
-
-**Proxy Target Strategy**: Trained on internal proxy labels derived from transaction behavior to bridge the gap in missing direct default data for alternative credit scoring.
 
 ---
 
