@@ -43,11 +43,13 @@ def load_expected_columns() -> list:
 def generate_shap_plots(model, sample_data: pd.DataFrame, n_samples: int = 100):
     """Generate SHAP plots for model explainability."""
     try:
-        underlying_model = model._model_impl.python_model.model
-        
-        if not hasattr(underlying_model, 'get_booster'):
-            print("Warning: Model is not XGBoost. SHAP TreeExplainer requires tree-based models.")
-            return
+        # Extract underlying model from MLflow wrapper
+        if hasattr(model._model_impl, 'python_model'):
+            underlying_model = model._model_impl.python_model.model
+        elif hasattr(model._model_impl, 'xgb_model'):
+            underlying_model = model._model_impl.xgb_model
+        else:
+            underlying_model = model._model_impl
         
         # Create SHAP explainer
         explainer = shap.TreeExplainer(underlying_model)

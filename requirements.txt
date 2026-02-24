@@ -12,5 +12,3 @@ seaborn
 mlflow
 xgboost
 flake8
-streamlit
-shap

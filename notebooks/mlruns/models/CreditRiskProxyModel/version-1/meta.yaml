@@ -1,8 +1,8 @@
 creation_timestamp: 1765896544859
-current_stage: None
+current_stage: Production
 deployment_job_state: null
 description: null
-last_updated_timestamp: 1765896544859
+last_updated_timestamp: 1771966358723
 model_id: m-a5395208759d4daabc2006b5149354e0
 name: CreditRiskProxyModel
 run_id: 264c04e7d3fd47cbb03e74962d414c96
