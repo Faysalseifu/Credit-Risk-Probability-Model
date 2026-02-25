@@ -13,7 +13,9 @@ import seaborn as sns
 # Configuration
 MODEL_NAME = os.getenv("MODEL_NAME", "CreditRiskProxyModel")
 MODEL_STAGE = os.getenv("MODEL_STAGE", "Production")
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+# Default to notebooks/mlruns if it exists, otherwise ./mlruns
+_default_uri = "file:./notebooks/mlruns" if Path("notebooks/mlruns").exists() else "file:./mlruns"
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", _default_uri)
 FEATURE_COLUMNS_PATH = os.getenv("FEATURE_COLUMNS_PATH", "data/processed/expected_columns.json")
 OUTPUT_DIR = Path("artifacts/shap_plots")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -41,11 +43,13 @@ def load_expected_columns() -> list:
 def generate_shap_plots(model, sample_data: pd.DataFrame, n_samples: int = 100):
     """Generate SHAP plots for model explainability."""
     try:
-        underlying_model = model._model_impl.python_model.model
-        
-        if not hasattr(underlying_model, 'get_booster'):
-            print("Warning: Model is not XGBoost. SHAP TreeExplainer requires tree-based models.")
-            return
+        # Extract underlying model from MLflow wrapper
+        if hasattr(model._model_impl, 'python_model'):
+            underlying_model = model._model_impl.python_model.model
+        elif hasattr(model._model_impl, 'xgb_model'):
+            underlying_model = model._model_impl.xgb_model
+        else:
+            underlying_model = model._model_impl
         
         # Create SHAP explainer
         explainer = shap.TreeExplainer(underlying_model)

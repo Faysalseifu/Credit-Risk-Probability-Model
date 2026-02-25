@@ -1,17 +1,17 @@
-# í¿¦ Credit Risk Probability Model (Alternative Data)
+# ğŸ¦ Credit Risk Probability Model (Alternative Data)
 
 [![CI/CD Pipeline](https://github.com/your-username/Credit-Risk-Probability-Model/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/Credit-Risk-Probability-Model/actions)
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge.svg)](https://your-app-link.streamlit.app)
 
 An end-to-end machine learning pipeline for building, training, and deploying a credit-risk scoring service for BNPL (Buy Now Pay Later) programs, using alternative data sources.
 
-## íº€ Live Demo
+## ğŸš€ Live Demo
 **[Launch Interactive Dashboard](https://your-app-link.streamlit.app)**
 *Test the model with custom customer data and view real-time risk assessments.*
 
 ---
 
-## í³Š Key Results
+## ğŸ“Š Key Results
 - **ROC-AUC**: `0.999` (XGBoost champion)
 - **F1 Score**: `0.983` 
 - **Precision / Recall**: `0.983 / 0.995`
@@ -20,7 +20,7 @@ An end-to-end machine learning pipeline for building, training, and deploying a 
 
 ---
 
-## í³¸ Model Explainability (SHAP)
+## ğŸ“¸ Model Explainability (SHAP)
 
 We use SHAP (SHapley Additive exPlanations) to ensure "Right to Explanation" and regulatory compliance (Basel II).
 
@@ -32,7 +32,7 @@ We use SHAP (SHapley Additive exPlanations) to ensure "Right to Explanation" and
 
 ---
 
-## í»¡ï¸ Business Understanding & Compliance
+## ğŸ›¡ï¸ Business Understanding & Compliance
 
 **Basel II and Interpretability**: Capital depends on PD estimates, so regulators must retrace every assumption. We use interpretable features, monotonic transformations, and SHAP analysis so audits can reproduce results and challenge drivers.
 
@@ -42,7 +42,7 @@ We use SHAP (SHapley Additive exPlanations) to ensure "Right to Explanation" and
 
 ---
 
-## í» ï¸ Technical Stack
+## ğŸ› ï¸ Technical Stack
 - **Languages**: Python 3.10+
 - **ML Frameworks**: XGBoost, Scikit-Learn
 - **Explainability**: SHAP (TreeExplainer)
@@ -52,7 +52,7 @@ We use SHAP (SHapley Additive exPlanations) to ensure "Right to Explanation" and
 
 ---
 
-## í³‚ Project Structure
+## ğŸ“‚ Project Structure
 ```text
 â”œâ”€â”€ artifacts/               # Model binaries, SHAP plots, and screenshots
 â”œâ”€â”€ data/                    # Raw and processed datasets (git-ignored)
@@ -89,7 +89,7 @@ docker-compose up --build
 
 ---
 
-## í³« Contact
+## ğŸ“« Contact
 **Your Name**
 - **LinkedIn**: [linkedin.com/in/your-profile](https://linkedin.com/in/your-profile)
 - **Email**: your.email@example.com
